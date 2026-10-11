@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒班日历</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 12px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background-color: #2b78e4;
+            color: white;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .today-shift-box {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .today-shift {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .today-shift.白 {
+            background-color: #ff8888;
+        }
+        .today-shift.中 {
+            background-color: #dd4444;
+            color: #fff;
+        }
+        .today-shift.夜 {
+            background-color: #992222;
+            color: #fff;
+        }
+        .today-shift.小休 {
+            background-color: #b8e6b8;
+        }
+        .today-shift.休 {
+            background-color: #88dd88;
+        }
+        .setting-box {
+            background: #eeeeee;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .main-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .setting-box input {
+            padding: 4px;
+            font-size: 14px;
+            width: auto;
+        }
+        .tip {
+            color: #555;
+            font-size: 13px;
+        }
+        dialog {
+            border: none;
+            border-radius: 8px;
+            padding: 20px;
+            width: 420px;
+            max-height: 85vh;
+            overflow: auto;
+        }
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.45);
+        }
+        .dialog-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .dialog-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 16px;
+        }
+        .dialog-section:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .dialog-section h4 {
+            margin: 0 0 12px 0;
+        }
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .shift-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .shift-item select {
+            padding: 4px;
+            min-width: 80px;
+        }
+        .btn-small {
+            padding: 3px 8px;
+            font-size: 12px;
+        }
+        .week-head {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+        .week-head div {
+            text-align: center;
+            padding: 6px;
+            font-weight: bold;
+            background-color: #e7edf7;
+            border-radius: 4px;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .cell {
+            min-height: 80px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .cell.today {
+            outline: 4px solid #0066cc;
+            outline-offset: -4px;
+            border-color: #0066cc;
+            box-shadow: 0 0 12px rgba(0, 102, 204, 0.7);
+        }
+        .cell.query-highlight {
+            outline: 4px solid #ff8800;
+            outline-offset: -6px;
+            border: 3px dashed #ffcc44;
+            box-shadow: 0 0 14px rgba(255, 136, 0, 0.75);
+        }
+        .day-num {
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .shift {
+            margin-top: 6px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .白 {
+            background-color: #ff8888;
+        }
+        .中 {
+            background-color: #dd4444;
+            color: #fff;
+        }
+        .夜 {
+            background-color: #992222;
+            color: #fff;
+        }
+        .小休 {
+            background-color: #b8e6b8;
+        }
+        .休 {
+            background-color: #88dd88;
+        }
+        .empty {
+            background-color: #fafafa;
+        }
+        @media (max-width: 720px) {
+            .main-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header {
+                justify-content: center;
+            }
+        }
+        @media (max-width: 600px) {
+            .cell {
+                min-height: 60px;
+                padding: 4px;
+                font-size: 11px;
+            }
+            .day-num {
+                font-size: 13px;
+            }
+            .title {
+                font-size: 18px;
+            }
+            .today-shift {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button id="prevBtn">◀ 上月</button>
+        <div class="title" id="monthTitle"></div>
+        <button id="nextBtn">下月 ▶</button>
+    </div>
+
+    <div class="today-shift-box">
+        <div class="today-shift" id="todayShift">今日：-</div>
+    </div>
+
+    <div class="week-head">
+        <div>日</div>
+        <div>一</div>
+        <div>二</div>
+        <div>三</div>
+        <div>四</div>
+        <div>五</div>
+        <div>六</div>
+    </div>
+    <div class="calendar" id="calendar"></div>
+
+    <div class="setting-box">
+        <div class="main-row">
+            <button id="openRuleBtn">修改倒班规律</button>
+
+            <span>跳转</span>
+            <input type="date" id="queryDate">
+            <button id="jumpBtn">跳转至该日</button>
+            <button id="backTodayBtn">返回当天</button>
+        </div>
+        <div class="info-row">
+            <span class="tip">基准、倒班模式自动保存在本地，刷新不会丢失</span>
+        </div>
+    </div>
+
+    <dialog id="ruleDialog">
+        <div class="dialog-section">
+            <h4>基准日期</h4>
+            <div class="dialog-row">
+                <span>基准日期：</span>
+                <input type="date" id="anchorInput">
+            </div>
+        </div>
+        <div class="dialog-section">
+            <h4>自定义倒班循环</h4>
+            <div id="patternList"></div>
+            <div class="dialog-footer">
+                <button id="addShiftBtn" class="btn-small">+ 增加班次</button>
+                <button id="delShiftBtn" class="btn-small">- 删除最后一班</button>
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <button id="cancelRuleBtn">取消</button>
+            <button id="saveRuleBtn">保存全部设置</button>
+        </div>
+    </dialog>
+
+    <script>
+        const shiftOptions = ["白", "中", "夜", "小休", "休"];
+        const defaultPattern = ["白", "白", "中", "中", "小休", "夜", "夜", "休", "休", "休"];
+        const defaultAnchor = "2026-10-09";
+
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        let queryTargetDate = null;
+
+        const calendarEl = document.getElementById("calendar");
+        const monthTitleEl = document.getElementById("monthTitle");
+        const todayShiftEl = document.getElementById("todayShift");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const queryDateEl = document.getElementById("queryDate");
+        const jumpBtn = document.getElementById("jumpBtn");
+        const backTodayBtn = document.getElementById("backTodayBtn");
+
+        const ruleDialog = document.getElementById("ruleDialog");
+        const anchorInputEl = document.getElementById("anchorInput");
+        const openRuleBtn = document.getElementById("openRuleBtn");
+        const cancelRuleBtn = document.getElementById("cancelRuleBtn");
+        const saveRuleBtn = document.getElementById("saveRuleBtn");
+
+        const patternListEl = document.getElementById("patternList");
+        const addShiftBtn = document.getElementById("addShiftBtn");
+        const delShiftBtn = document.getElementById("delShiftBtn");
+
+        function toDateString(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+        }
+
+        function loadAnchor() {
+            const saved = localStorage.getItem("shiftAnchor");
+            if (saved) return new Date(saved);
+            return new Date(defaultAnchor);
+        }
+
+        function loadPattern() {
+            const saved = localStorage.getItem("shiftPattern");
+            if (saved) {
+                try {
+                    const arr = JSON.parse(saved);
+                    if (Array.isArray(arr) && arr.length > 0) return arr;
+                } catch (e) {
+                }
+            }
+            return [...defaultPattern];
+        }
+
+        let anchorDate = loadAnchor();
+        let cyclePattern = loadPattern();
+
+        prevBtn.onclick = () => {
+            currentMonth -= 1;
+            //  自动跨年
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear -= 1;
+            }
+            render();
+        };
+
+        nextBtn.onclick = () => {
+            currentMonth += 1;
+            //  自动跨年
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear += 1;
+            }
+            render();
+        };
+
+        backTodayBtn.onclick = () => {
+            const now = new Date();
+            currentYear = now.getFullYear();
+            currentMonth = now.getMonth();
+            queryTargetDate = null;
+            render();
+        };
+
+        openRuleBtn.onclick = () => {
+            anchorInputEl.value = toDateString(anchorDate);
+            renderPatternEditor();
+            ruleDialog.showModal();
+        };
+        cancelRuleBtn.onclick = () => ruleDialog.close();
+
+        function renderPatternEditor() {
+            patternListEl.innerHTML = "";
+            cyclePattern.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "shift-item";
+                const label = document.createElement("span");
+                label.innerText = `第${index + 1}班`;
+                const select = document.createElement("select");
+                shiftOptions.forEach(optText => {
+                    const opt = document.createElement("option");
+                    opt.innerText = optText;
+                    if (optText === item) opt.selected = true;
+                    select.appendChild(opt);
+                });
+                div.appendChild(label);
+                div.appendChild(select);
+                patternListEl.appendChild(div);
+            })
+        }
+
+        addShiftBtn.onclick = () => {
+            cyclePattern.push("休");
+            renderPatternEditor();
+        };
+        delShiftBtn.onclick = () => {
+            if (cyclePattern.length > 1) {
+                cyclePattern.pop();
+                renderPatternEditor();
+            }
+        };
+
+        saveRuleBtn.onclick = () => {
+            const val = anchorInputEl.value;
+            if (!val) return;
+            anchorDate = new Date(val);
+            anchorDate.setHours(0, 0, 0, 0);
+            localStorage.setItem("shiftAnchor", val);
+
+            const selects = patternListEl.querySelectorAll("select");
+            const newPattern = [];
+            selects.forEach(s => newPattern.push(s.value));
+            cyclePattern = newPattern;
+            localStorage.setItem("shiftPattern", JSON.stringify(cyclePattern));
+
+            ruleDialog.close();
+            render();
+        };
+
+        jumpBtn.onclick = () => {
+            const val = queryDateEl.value;
+            if (!val) return;
+            queryTargetDate = new Date(val);
+            queryTargetDate.setHours(0, 0, 0, 0);
+            currentYear = queryTargetDate.getFullYear();
+            currentMonth = queryTargetDate.getMonth();
+            render();
+        };
+
+        function getShift(date) {
+            const anchor = new Date(anchorDate);
+            anchor.setHours(0, 0, 0, 0);
+            const target = new Date(date);
+            target.setHours(0, 0, 0, 0);
+            const diffTime = target - anchor;
+            const dayDiff = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const idx = ((dayDiff % cyclePattern.length) + cyclePattern.length) % cyclePattern.length;
+            return cyclePattern[idx];
+        }
+
+        function render() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayShift = getShift(today);
+            todayShiftEl.innerText = "今日：" + todayShift;
+            todayShiftEl.className = "today-shift " + todayShift;
+
+            calendarEl.innerHTML = "";
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const weekStart = firstDay.getDay();
+
+            monthTitleEl.innerText = `${currentYear} 年 ${currentMonth + 1} 月`;
+
+            for (let i = 0; i < weekStart; i++) {
+                const div = document.createElement("div");
+                div.className = "cell empty";
+                calendarEl.appendChild(div);
+            }
+
+            for (let d = 1; d <= lastDay.getDate(); d++) {
+                const date = new Date(currentYear, currentMonth, d);
+                const shift = getShift(date);
+                const cell = document.createElement("div");
+                cell.className = "cell " + shift;
+
+                if (+date === +today) {
+                    cell.classList.add("today");
+                }
+                if (queryTargetDate && +date === +queryTargetDate) {
+                    cell.classList.add("query-highlight");
+                }
+
+                cell.innerHTML =
+                    `<div class="day-num">${d}</div>
+                     <div class="shift">${shift}</div>`;
+
+                calendarEl.appendChild(cell);
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
